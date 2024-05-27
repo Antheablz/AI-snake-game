@@ -5,23 +5,26 @@ import torch.nn.functional as f  # activation  and max polling functions, used t
 import os  # used to save the model
 
 
-# feed forward model with an input layer, hidden layer, and output layer.
+"""
+Forward feeding model consisting of an input layer, hidden layer, and output layer.
+"""
+
+
 class Linear_QNet(nn.Module):
     # init used to construct layers used in computation
     def __init__(self, input_size, hidden_size, output_size):
         super(Linear_QNet, self).__init__()
 
-        self.linear1 = nn.Linear(
-            input_size, hidden_size
-        )  # applies linear transformation to the incoming data using weights and biases
+        # applies linear transformation to the incoming data using weights and biases
+        self.linear1 = nn.Linear(input_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, output_size)
 
     # each model has a forward function where computation happens. An input it passed through the network layers to generate an output (a prediction)
     def forward(self, tensor):
-        tensor = f.relu(
-            self.linear1(tensor)
-        )  # Apply the linear layer and use activation function
+        # Apply the linear layer and use activation function
+        tensor = f.relu(self.linear1(tensor))
         tensor = self.linear2(tensor)
+
         return tensor
 
     def save(self, file_name="model.pth"):
@@ -34,7 +37,11 @@ class Linear_QNet(nn.Module):
         torch.save(self.state_dict(), file_name)
 
 
-# class that does the actual training and optiomization
+"""
+Conducts the training and optimization.
+"""
+
+
 class QTrainer:
     def __init__(self, model, lr, gamma):
         self.lr = lr
@@ -79,7 +86,7 @@ class QTrainer:
 
         # loss is a measument of how far from our ideal output the models prediction was
         loss = self.criterion(target, prediction)
-        loss.backward()  # apply back propagation and calculate gradients that will direct the learning
+        loss.backward()  # Apply backpropagation and calculate gradients that will direct the learning.
 
         # optimizer preforms one learning step.
         # Uses gradients from backward() to nudge learning weights in direction it thinks will reduce loss
