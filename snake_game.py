@@ -12,14 +12,6 @@ from enum import Enum
 
 pygame.init()
 font = pygame.font.Font("arial.ttf", 25)
-# font = pygame.font.SysFont('arial', 25)
-
-
-# RESET: after each game agent should be able to reset game and start new game
-# REWAWARD that our agent gets
-# PLAY(ACTION) -> computes direction
-# keep track of game_iteration
-# change is_collision
 
 
 class Direction(Enum):
@@ -55,8 +47,8 @@ class SnakeGameAI:
 
     def reset(self):
         # init game state
-        # self.direction = list(direction.values()).index(random.randint(1,4))
-        self.direction = Direction.RIGHT
+        direction_list = list(map(lambda x: x.value, Direction._member_map_.values()))
+        self.direction = random.choice(list(Direction))
 
         self.head = Point(self.w / 2, self.h / 2)
         self.snake = [
@@ -85,11 +77,6 @@ class SnakeGameAI:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-
-            # if event.type == pygame.KEYDOWN:
-            # if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT or event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-            # chosen = direction[pygame.key.name(event.key)]
-            # elf.direction = chosen
 
         # 2. move
         self._move(action)
@@ -164,19 +151,16 @@ class SnakeGameAI:
         step_clockwise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
         cur_index = step_clockwise.index(self.direction)
 
-        if np.array_equal(
-            action, [1, 0, 0]
-        ):  # if want to go straight, no direction change
+        # if want to go straight, no direction change
+        if np.array_equal(action, [1, 0, 0]):
             new_step = step_clockwise[cur_index]
 
-        if np.array_equal(
-            action, [0, 1, 0]
-        ):  # if want to turn right, change direction in clockwise order
+        # if want to turn right, change direction in clockwise order
+        if np.array_equal(action, [0, 1, 0]):
             new_step = step_clockwise[(cur_index + 1) % 4]
 
-        if np.array_equal(
-            action, [0, 0, 1]
-        ):  # if want to turn left, change direction in anti-clockwise order
+        # if want to turn left, change direction in anti-clockwise order
+        if np.array_equal(action, [0, 0, 1]):
             new_step = step_clockwise[(cur_index - 1) % 4]
 
         self.direction = new_step

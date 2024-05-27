@@ -10,6 +10,8 @@ from graph import plot
 MAX_MEM = 100_000
 BATCH_SIZE = 1000
 LEARNING_RATE = 0.001
+INPUTS = 11
+OUTPUTS = 3
 
 
 class Agent:
@@ -17,10 +19,9 @@ class Agent:
         self.num_games = 0
         self.epsilon = 0  # parameter to control the randomness
         self.gamma = 0.9  # discount rate, must be < 1
-        self.memory = deque(
-            maxlen=MAX_MEM
-        )  # if we exceed max_mem then automatically pop elements w/ popleft()
-        self.model = Linear_QNet(11, 256, 3)  # need 11 inputs and 3 outputs.
+        # Automatically pop elements w/ popleft() if MAX_MEM is exceeded.
+        self.memory = deque(maxlen=MAX_MEM)
+        self.model = Linear_QNet(INPUTS, 256, OUTPUTS)
         self.trainer = QTrainer(self.model, lr=LEARNING_RATE, gamma=self.gamma)
 
     def get_state(self, game):
@@ -69,39 +70,35 @@ class Agent:
         # random moves: tradeoff exploration / exploitation
         # so make random moves to explore the environment but the better out agent gets, the less random moves it makes
         # and the more we want to exploit our agent
-        self.epsilon = (
-            80 - self.num_games
-        )  # The more games we have the smaller our epsilon is
+
+        # The more games we have the smaller our epsilon is
+        self.epsilon = 80 - self.num_games
         next_move = [0, 0, 0]
-        if (
-            random.randint(0, 200) < self.epsilon
-        ):  # the smaller the epsilon, the less frequent we choose a random move
+        # the smaller the epsilon, the less frequent we choose a random move
+        if random.randint(0, 200) < self.epsilon:
             move = random.randint(0, 2)  # give random move- 0, 1, or 2
             next_move[move] = 1
         else:  # make a move based on a our model,
             state0 = torch.tensor(state, dtype=torch.float)  # convert state to a tensor
-            prediction = self.model(
-                state0
-            )  # get our prediction based on a single state
-            move = torch.argmax(
-                prediction
-            ).item()  # return type is a tesnor so we convert to single int by calling item()
+            prediction = self.model(state0)
+            # get our prediction based on a single state
+            move = torch.argmax(prediction).item()
+
+            # return type is a tensor so we convert to single int by calling item()
             next_move[move] = 1
 
         return next_move
 
     def remember(self, state, action, reward, next_state, game_over):
-        self.memory.append(
-            (state, action, reward, next_state, game_over)
-        )  # if exceeds max_mem then popleft(), append as one element
+        # if exceeds max_mem then popleft(), append as one element
+        self.memory.append((state, action, reward, next_state, game_over))
 
     def train_long_memory(self):
         # grep 1000 (a single batch) from memory
         # get the batch_size number of tuples
         if len(self.memory) > BATCH_SIZE:
-            mini_sample = random.sample(
-                self.memory, BATCH_SIZE
-            )  # returns a list of tuples
+            # returns a list of tuples
+            mini_sample = random.sample(self.memory, BATCH_SIZE)
         else:
             mini_sample = self.memory
 
@@ -109,33 +106,33 @@ class Agent:
         self.trainer.train_step(states, actions, rewards, next_states, game_overs)
 
     def train_short_memory(self, state, action, reward, next_state, game_over):
-        # for only one step
+        # Train the agent for a single step.
         self.trainer.train_step(state, action, reward, next_state, game_over)
 
 
-def train():  # global function
-    plot_scores = []  # empty list at start to keep track of scores
-    plot_avg_scores = []
+def train():
+    plot_scores = []  # Empty list at start to keep track of scores.
+    plot_avg_scores = []  # Empty list at start to keep track of the average score.
     total_score = 0
     cur_record = 0
 
-    # create an agent and a game
+    # Create an agent and a game.
     agent = Agent()
     game = SnakeGameAI()
 
-    # create training loop, runs until we quit script
+    # Create training loop which runs until we quit script.
     while True:
-        # get old state
+        # Get old state.
         cur_state = agent.get_state(game)
 
-        # get move based on current state
+        # Get the next move based on current state.
         next_move = agent.get_action(cur_state)
 
-        # preform the move and get new state
+        # Preform the move and get the new state.
         reward, game_over, score = game.play_step(next_move)
         next_state = agent.get_state(game)
 
-        # now train agents short memory (which is only for a single step)
+        # Train the agents' short term memory which is only used for a single step.
         agent.train_short_memory(cur_state, next_move, reward, next_state, game_over)
 
         # remember all of the above and store in long term memory (which is a deque)
